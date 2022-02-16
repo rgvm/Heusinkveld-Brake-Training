@@ -1,0 +1,42 @@
+html, body {
+    height: 100%;  
+}
+
+h1, #buttons {
+    text-align: center;
+}
+
+#content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#graph {
+    width: 1500px;
+    height: 350px;
+    border: 1px solid lightgrey;
+}
+
+.axis {
+    font: 12px  sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #B0BEC5;
+    shape-rendering: crispEdges;
+}
+
+.brakeline {
+    fill: none;
+    stroke: #FF5722;
+    stroke-width: 1px;
+}
+
+.throttleline {
+    fill: none;
+    stroke: #13CF23;
+    stroke-width: 1px;
+}

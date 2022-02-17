@@ -25,7 +25,7 @@ const yAxis = d3.axisRight(y)
     .tickPadding(4);
 
 // const CURVE_TYPE = d3.curveLinear;
-const CURVE_TYPE = d3.curveBasis;
+const CURVE_TYPE = d3.curveBundle;
 
 const throttleLine = d3.line()
     .curve(CURVE_TYPE)

@@ -4,7 +4,7 @@ const VENDOR_ID = 12471;
 
 const DATA = [];
 
-const MAX_POINTS = 1000;
+const MAX_POINTS = 2000;
 const MAX_VALUE = 100;
 const TIME_WINDOW = 5000;
 const WIDTH = 1500;
@@ -24,18 +24,23 @@ const yAxis = d3.axisRight(y)
     .tickSizeOuter(0)
     .tickPadding(4);
 
+// const CURVE_TYPE = d3.curveLinear;
+const CURVE_TYPE = d3.curveBasis;
+
 const throttleLine = d3.line()
-    .curve(d3.curveLinear)
+    .curve(CURVE_TYPE)
     .defined(p => !!p)
     .x((d) => x(d.x))
     .y((d) => y(d.throttle));
 const brakeLine = d3.line()
-    .curve(d3.curveLinear)
+    .curve(CURVE_TYPE)
     .defined(p => !!p)
     .x((d) => x(d.x))
     .y((d) => y(d.brake));
 
 const graph = d3.select("#graph");
+
+const TESTMODE = false;
 
 /**
  * Visualization functions.
@@ -128,6 +133,51 @@ function inputReportListener(event) {
     const throttle = data.getUint8(0) / 2.55;
 
     pushDataPoint(brake, throttle);
+}
+
+/**
+ * Functions for testing.
+ */
+
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+if (TESTMODE) {
+    const intervalMs = 10;
+    const speed = 5;
+    const numSpikesLow = 10;
+    const numSpikesHigh = 20;
+    const spikeChance = 3e-3;
+
+    let brake = random(0, 100);
+    let throttle = random(0, 100);
+    let brakeSpikeCounter = 0;
+    let throttleSpikeCounter = 0;
+
+    d3.interval(() => {
+        if (brakeSpikeCounter === 0 && Math.random() < spikeChance) {
+            brakeSpikeCounter += random(numSpikesLow, numSpikesHigh);
+        }
+        if (throttleSpikeCounter === 0 && Math.random() < spikeChance) {
+            throttleSpikeCounter += random(numSpikesLow, numSpikesHigh);
+        }
+        if (brakeSpikeCounter > 0) {
+            const lowValue = random(0, 20);
+            const highValue = random(MAX_VALUE - 20, MAX_VALUE);
+            brake = (brakeSpikeCounter-- % 2 === 0) ? lowValue : highValue;
+        } else {
+            brake = Math.min(MAX_VALUE, Math.max(0, brake + random(-speed, speed)));
+        }
+        if (throttleSpikeCounter > 0) {
+            const lowValue = random(0, 20);
+            const highValue = random(MAX_VALUE - 20, MAX_VALUE);
+            throttle = throttleSpikeCounter-- % 2 === 0 ? lowValue : highValue;
+        } else {
+            throttle = Math.min(MAX_VALUE, Math.max(0, throttle + random(-speed, speed)));
+        }
+        pushDataPoint(brake, throttle);
+    }, intervalMs);
 }
 
 d3.select("#pairbutton").node().onclick = async () => {

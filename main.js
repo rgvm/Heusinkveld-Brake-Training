@@ -10,6 +10,11 @@ const TIME_WINDOW = 5000;
 const WIDTH = 1500;
 const HEIGHT = 350;
 
+const WINDOW_SIZE = 20;
+const WINDOW = [];
+let slidingBrakeSum = 0;
+let slidingThrottleSum = 0;
+
 const MARGIN = {left: 0, right: 30, bottom: 20, top: 20};
 const VIEW_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom;
 const VIEW_WIDTH = WIDTH - MARGIN.right - MARGIN.left;
@@ -25,7 +30,7 @@ const yAxis = d3.axisRight(y)
     .tickPadding(4);
 
 // const CURVE_TYPE = d3.curveLinear;
-const CURVE_TYPE = d3.curveBundle;
+const CURVE_TYPE = d3.curveCatmullRom.alpha(0)
 
 const throttleLine = d3.line()
     .curve(CURVE_TYPE)
@@ -90,12 +95,20 @@ function draw(selection) {
 }
 
 function pushDataPoint(brake, throttle) {
+    WINDOW.push({brake, throttle});
+    slidingBrakeSum += brake;
+    slidingThrottleSum += throttle;
+    if (WINDOW.length > WINDOW_SIZE) {
+        const removedPoint = WINDOW.shift();
+        slidingBrakeSum -= removedPoint.brake;
+        slidingThrottleSum -= removedPoint.throttle;
+    }
+
     DATA.push({
         x: new Date(),
-        brake,
-        throttle,
+        brake: slidingBrakeSum / WINDOW.length,
+        throttle: slidingThrottleSum / WINDOW.length
     });
-
     if (DATA.length > MAX_POINTS) {
         DATA.shift();
     }
@@ -144,39 +157,27 @@ function random(min, max) {
 }
 
 if (TESTMODE) {
-    const intervalMs = 10;
-    const speed = 5;
-    const numSpikesLow = 10;
-    const numSpikesHigh = 20;
-    const spikeChance = 3e-3;
-
-    let brake = random(0, 100);
-    let throttle = random(0, 100);
-    let brakeSpikeCounter = 0;
-    let throttleSpikeCounter = 0;
-
+    const intervalMs = 20;
+    let brake = 15;
+    let throttle = 0;
+    let brakeSign = -1;
+    let throttleSign = 1;
+    const repeatMax = 4;
+    let repeat = repeatMax;
     d3.interval(() => {
-        if (brakeSpikeCounter === 0 && Math.random() < spikeChance) {
-            brakeSpikeCounter += random(numSpikesLow, numSpikesHigh);
+        if (repeat === 0) {
+            brake += brakeSign;
+            if (brake === 0 || brake === 15) {
+                brakeSign = -brakeSign;
+            }
+            throttle += throttleSign;
+            if (throttle === 0 || throttle === 15) {
+                throttleSign = -throttleSign;
+            }
+            repeat = repeatMax;
         }
-        if (throttleSpikeCounter === 0 && Math.random() < spikeChance) {
-            throttleSpikeCounter += random(numSpikesLow, numSpikesHigh);
-        }
-        if (brakeSpikeCounter > 0) {
-            const lowValue = random(0, 20);
-            const highValue = random(MAX_VALUE - 20, MAX_VALUE);
-            brake = (brakeSpikeCounter-- % 2 === 0) ? lowValue : highValue;
-        } else {
-            brake = Math.min(MAX_VALUE, Math.max(0, brake + random(-speed, speed)));
-        }
-        if (throttleSpikeCounter > 0) {
-            const lowValue = random(0, 20);
-            const highValue = random(MAX_VALUE - 20, MAX_VALUE);
-            throttle = throttleSpikeCounter-- % 2 === 0 ? lowValue : highValue;
-        } else {
-            throttle = Math.min(MAX_VALUE, Math.max(0, throttle + random(-speed, speed)));
-        }
-        pushDataPoint(brake, throttle);
+        repeat--;
+        pushDataPoint(brake / 0.15, throttle / 0.15);
     }, intervalMs);
 }
 

@@ -128,9 +128,9 @@ async function getPairedDevice() {
 function inputReportListener(event) {
     const { data } = event;
 
-    // Values range from 0-255.
-    const brake = data.getUint8(2) / 2.55;
-    const throttle = data.getUint8(0) / 2.55;
+    // Values range from 0-15.
+    const brake = data.getUint8(3) / 0.15;
+    const throttle = data.getUint8(1) / 0.15;
 
     pushDataPoint(brake, throttle);
 }
